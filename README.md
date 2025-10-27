@@ -19,8 +19,7 @@ This fragmented system leads to:
 
 ## 💡 Proposed Solution
 
-To address these issues, **Team AbaTiUr** developed **Campus Connect** —  
-a **forum + lost-and-found** web system that consolidates campus interaction into one reliable platform.
+To address these issues, **Team AbaTiUr** developed **Campus Connect** —  a **forum + lost-and-found** web system that consolidates campus interaction into one reliable platform.
 
 ### 🎯 Goals
 - Centralize **student discussions**, **announcements**, and **lost-and-found** posts  
