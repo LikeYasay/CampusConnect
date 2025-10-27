@@ -1,4 +1,4 @@
-# 🏫 Campus Connect – CIT-U Community Platform 🌐
+# 🏫 CIT-U Campus Connect: Forum + Lost and Found 🌐
 
 **Campus Connect** is a **Spring Boot + React web system** designed for the **Cebu Institute of Technology – University (CIT-U)** community.  
 It serves as a **centralized hub** for campus discussions, announcements, and **Lost & Found management**, helping students stay connected, informed, and engaged.
