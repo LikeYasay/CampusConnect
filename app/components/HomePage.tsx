@@ -92,7 +92,7 @@ const FORUM: ForumItem[] = [
 export default function HomePage() {
   return (
     <>
-
+      
       <main className="bg-white">
         {/* ===== HERO w/ background image + stats + quick actions ===== */}
         <section className="relative">
@@ -110,7 +110,7 @@ export default function HomePage() {
             <div className="absolute inset-0">
                 <div className="mx-auto max-w-6xl px-4 py-8 md:py-10 text-center">
                 {/* Title */}
-                <h1 className="text-white text-5xl sm:text-6xl md:text-7xl font-black mb-1">
+                <h1 className="text-white text-9xl sm:text-8xl md:text-7xl font-black mb-1">
                     Welcome, Wildcat!
                 </h1>
                 <p className="text-white/95 text-base sm:text-lg md:text-2xl mt-2 mb-6">
