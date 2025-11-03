@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 
 export default function StudentForumPage() {
   return (
@@ -41,9 +42,11 @@ export default function StudentForumPage() {
           </div>
 
           <div className="flex justify-center gap-4 mt-10">
-            <button className="bg-[#FFD700] text-black font-semibold px-8 py-3 rounded-lg shadow-md hover:opacity-90">
-              START DISCUSSION
-            </button>
+            <Link href="/forum/create-discussion">
+              <button className="bg-[#FFD700] text-black font-semibold px-8 py-3 rounded-lg shadow-md hover:opacity-90 transition">
+                START DISCUSSION
+              </button>
+            </Link>
             <button className="bg-[#FFD700] text-black font-semibold px-8 py-3 rounded-lg shadow-md hover:opacity-90">
               BROWSE TOPIC
             </button>
@@ -145,7 +148,11 @@ export default function StudentForumPage() {
                 "I'm struggling with some concepts in Data Structures and would love to form a study group. Anyone interested in meeting up this week?",
               replies: "12",
               likes: "24",
-              hashtags: ["#study-group", "#data-structures", "#computer-science"],
+              hashtags: [
+                "#study-group",
+                "#data-structures",
+                "#computer-science",
+              ],
             },
             {
               tag: "Events",
@@ -188,9 +195,8 @@ export default function StudentForumPage() {
               <h2 className="text-xl font-bold mt-4">{post.title}</h2>
               <p className="mt-2 text-gray-700 text-sm">{post.content}</p>
               <p className="mt-4 text-sm text-gray-600">
-                by{" "}
-                <span className="font-bold text-[#8A252C]">{post.user}</span> •{" "}
-                {post.replies} replies •{" "}
+                by <span className="font-bold text-[#8A252C]">{post.user}</span>{" "}
+                • {post.replies} replies •{" "}
                 <span className="text-yellow-500">{post.likes} likes</span>
               </p>
               <div className="flex flex-wrap gap-2 mt-3">
@@ -204,9 +210,11 @@ export default function StudentForumPage() {
                 ))}
               </div>
               <div className="flex gap-3 mt-6">
-                <button className="bg-[#8A252C] text-white px-5 py-2 rounded-lg text-sm font-medium hover:opacity-90">
-                  Join Discussion
-                </button>
+                <Link href="/forum/discussion">
+                  <button className="bg-[#8A252C] text-white px-5 py-2 rounded-lg text-sm font-medium hover:opacity-90 transition">
+                    Join Discussion
+                  </button>
+                </Link>
                 <button className="border border-[#8A252C] text-[#8A252C] px-5 py-2 rounded-lg text-sm font-medium hover:bg-[#8A252C]/10">
                   Share
                 </button>
@@ -247,7 +255,9 @@ export default function StudentForumPage() {
 
           {/* Top Contributors */}
           <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
-            <h3 className="text-xl font-bold text-[#8A252C] mb-4">🏆 Top Contributors</h3>
+            <h3 className="text-xl font-bold text-[#8A252C] mb-4">
+              🏆 Top Contributors
+            </h3>
             {[
               { name: "John Dela Cruz", posts: "234", medal: "🥇" },
               { name: "Maria Santos", posts: "189", medal: "🥈" },
@@ -256,7 +266,9 @@ export default function StudentForumPage() {
               <div
                 key={i}
                 className={`flex items-center justify-between p-3 rounded-lg mb-2 ${
-                  i === 0 ? "bg-gradient-to-r from-yellow-500 to-[#FFD700]" : "bg-gray-50"
+                  i === 0
+                    ? "bg-gradient-to-r from-yellow-500 to-[#FFD700]"
+                    : "bg-gray-50"
                 }`}
               >
                 <div>

@@ -54,7 +54,7 @@ export default function Landing() {
           <h2 className="text-center text-2xl sm:text-3xl md:text-5xl font-bold">
             Campus Connect by the Numbers
           </h2>
-          <div className="mt-8 sm:mt-10 grid grid-cols-2 md:grid-cols-4 gap-6 sm:gap-10 text-center">
+          <div id="why-choose" className="mt-8 sm:mt-10 grid grid-cols-2 md:grid-cols-4 gap-6 sm:gap-10 text-center">
             <Stat value="1,247" label="Items Reported Lost" />
             <Stat value="892" label="Items Successfully Found" />
             <Stat value="3,456" label="Forum Discussions" />
@@ -176,8 +176,6 @@ export default function Landing() {
           </div>
         </div>
       </section>
-
-      <br />
     </main>
   );
 }
