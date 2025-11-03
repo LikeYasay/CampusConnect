@@ -163,7 +163,7 @@ export default function OurTeamPage() {
               />
             </div>
             <h3 className="text-[#8a252c] text-2xl font-bold mt-4">
-              Treasure Louis Abadinas
+              Treasure Louise Abadinas
             </h3>
             <div className="bg-[#ffd700] rounded-lg inline-block px-4 py-1 mt-2">
               <p className="text-sm font-medium text-black">UI/UX Designer</p>
