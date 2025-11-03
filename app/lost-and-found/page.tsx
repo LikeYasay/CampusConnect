@@ -139,17 +139,17 @@ export default function LostAndFoundPage() {
             time: "2 hours ago",
             description:
               "Black iPhone 14 Pro with cracked screen protector. Has a red case.",
-            image: "/image.png",
+            image: "/Iphone-14.jpeg",
           },
           {
             status: "FOUND",
             category: "Personal Items",
-            title: "Blue CIT-U ID Lace",
+            title: "Black CIT-U ID Lace",
             location: "Engineering Building",
             time: "4 hours ago",
             description:
-              "Blue lanyard with CIT-U logo, found near the entrance.",
-            image: "/image-2.png",
+              "Black lanyard with CIT-U logo, found near the entrance.",
+            image: "/lanyard.jpg",
           },
         ].map((item, i) => (
           <div
