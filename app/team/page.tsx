@@ -156,7 +156,7 @@ export default function OurTeamPage() {
             <div className="flex justify-center">
               <Image
                 src="/nega.jpeg"
-                alt="Treasure Louis Abadinas"
+                alt="Treasure Louise Abadinas"
                 width={120}
                 height={120}
                 className="w-[120px] h-[120px] rounded-full border-4 border-[#ffffff] object-cover"
