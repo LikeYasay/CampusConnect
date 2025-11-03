@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 
 export default function LostAndFoundPage() {
   return (
@@ -38,9 +39,12 @@ export default function LostAndFoundPage() {
           </div>
 
           <div className="flex justify-center gap-4 mt-10">
-            <button className="bg-[#FFD700] text-black font-semibold px-8 py-3 rounded-lg shadow-md hover:opacity-90">
+            <Link
+              href="/lost-and-found/report"
+              className="bg-[#FFD700] text-black font-semibold px-8 py-3 rounded-lg shadow-md hover:opacity-90 transition"
+            >
               REPORT ITEM
-            </button>
+            </Link>
             <button className="bg-[#FFD700] text-black font-semibold px-8 py-3 rounded-lg shadow-md hover:opacity-90">
               BROWSE ITEM
             </button>
@@ -184,12 +188,17 @@ export default function LostAndFoundPage() {
               </p>
               <p className="mt-2 text-gray-700 text-sm">{item.description}</p>
               <div className="flex gap-3 mt-4">
-                <button className="bg-[#8A252C] text-white px-4 py-2 rounded-lg text-sm font-medium hover:opacity-90">
+                <Link
+                  href="/lost-and-found/view"
+                  className="bg-[#8A252C] text-white px-4 py-2 rounded-lg text-sm font-medium hover:opacity-90 transition"
+                >
                   View Details
-                </button>
-                <button className="border border-[#8A252C] text-[#8A252C] px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#8A252C]/10">
-                  Contact Owner
-                </button>
+                </Link>
+                <Link href="/lost-and-found/contact">
+                  <button className="border border-[#8A252C] text-[#8A252C] px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#8A252C]/10 transition">
+                    Contact Owner
+                  </button>
+                </Link>
               </div>
             </div>
           </div>

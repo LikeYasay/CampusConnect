@@ -12,7 +12,9 @@ export default function Footer() {
           <Link href="/home" className="hover:underline">Home</Link>
           <Link href="/forum" className="hover:underline">Forum</Link>
           <Link href="/lostfound" className="hover:underline">Lost &amp; Found</Link>
-          <Link href="/about" className="hover:underline">About</Link>
+          <Link href="/#why-choose" className="hover:underline">About</Link>
+          <Link href="/team" className="hover:underline">Our Team</Link>
+          <Link href="/contact" className="hover:underline">Contact Us</Link>
         </nav>
       </div>
     </footer>

@@ -38,16 +38,31 @@ export default function NavBar() {
             <Link href="/forum" className="hover:text-[#8a252c] transition">
               Forum
             </Link>
-            <Link href="/lost-and-found" className="hover:text-[#8a252c] transition">
+            <Link
+              href="/lost-and-found"
+              className="hover:text-[#8a252c] transition"
+            >
               Lost &amp; Found
             </Link>
-            <Link href="/about" className="hover:text-[#8a252c] transition">
+            <Link
+              href="/#why-choose"
+              className="hover:text-[#8a252c] transition"
+            >
               About
+            </Link>
+            <Link href="/team" className="hover:text-[#8a252c] transition">
+              Our Team
+            </Link>
+                        <Link href="/contact" className="hover:text-[#8a252c] transition">
+              Contact Us 
             </Link>
           </nav>
 
           {/* Notification bell */}
-          <div className="relative flex items-center justify-center cursor-pointer">
+          <Link
+            href="/notifications"
+            className="relative flex items-center justify-center cursor-pointer hover:opacity-80 transition"
+          >
             <svg
               width={24}
               height={24}
@@ -62,10 +77,10 @@ export default function NavBar() {
                 fill="#8A252C"
               />
             </svg>
-            <div className="absolute -top-1 -right-1 flex items-center justify-center w-5 h-5 rounded-full bg-[#ffd700]">
+            <div className="absolute -top-1 -right-1 flex items-center justify-center w-5 h-5 rounded-full bg-[#FFD700]">
               <p className="text-xs font-bold text-black">2</p>
             </div>
-          </div>
+          </Link>
 
           {/* Buttons */}
           <Link
@@ -80,6 +95,14 @@ export default function NavBar() {
           >
             Login
           </Link>
+
+          {/* Profile Button */}
+          <Link
+            href="/profile"
+            className="flex items-center justify-center cursor-pointer hover:opacity-90 transition"
+          >
+            <Image src="/profile.png" alt="Profile" width={36} height={36} />
+          </Link>
         </div>
 
         {/* MOBILE BURGER */}
@@ -89,7 +112,11 @@ export default function NavBar() {
           onClick={() => setOpen((v) => !v)}
         >
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-            <path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" strokeWidth="2" />
+            <path
+              d="M3 6h18M3 12h18M3 18h18"
+              stroke="currentColor"
+              strokeWidth="2"
+            />
           </svg>
         </button>
       </div>
