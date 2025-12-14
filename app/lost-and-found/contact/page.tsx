@@ -1,291 +1,353 @@
 "use client";
 
+import type React from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
+import { lostFoundAPI, messageAPI } from "@/lib/api";
+import { getUserFromToken } from "@/lib/auth";
+import RequireAuth from "@/components/auth/require-auth";
+import { Lightbulb, Shield } from "lucide-react";
 
-export default function ContactOwnerPage() {
-  return (
-    <div className="min-h-screen bg-[#f8f9fa] text-gray-900 flex flex-col">
-      {/* ─── BREADCRUMB ───────────────────────────── */}
-      <div className="max-w-7xl mx-auto w-full mt-8 px-6 flex items-center gap-2 text-sm text-[#666]">
-        <Link href="/lost-and-found" className="hover:underline">
-          Lost &amp; Found
-        </Link>
-        <span>/</span>
-        <Link href="/lost-and-found/view" className="hover:underline">
-          Black iPhone 14 Pro
-        </Link>
-        <span>/</span>
-        <p className="font-medium text-[#8A252C]">Contact Owner</p>
+interface UserType {
+  userId: number;
+  name: string;
+  email: string;
+  profileImageUrl?: string;
+  isOnline?: boolean;
+}
+
+interface Item {
+  id: number;
+  title: string;
+  location: string;
+  status: "LOST" | "FOUND";
+  imageUrl?: string;
+  category?: string;
+  createdAt?: string;
+  description?: string;
+  user?: UserType;
+}
+
+export default function LostFoundContactPage() {
+  const searchParams = useSearchParams();
+  const itemId = searchParams.get("id");
+
+  const [item, setItem] = useState<Item | null>(null);
+  const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [sendingMessage, setSendingMessage] = useState(false);
+  const [successPopup, setSuccessPopup] = useState(false);
+
+  /* Fetch Item */
+  useEffect(() => {
+    if (!itemId) return;
+
+    const fetchItem = async () => {
+      try {
+        const data = await lostFoundAPI.getById(Number(itemId));
+        setItem(data);
+      } catch (err) {
+        console.error("Error fetching item:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchItem();
+  }, [itemId]);
+
+  const loggedUser = getUserFromToken();
+  const loggedInUserId = loggedUser?.userId;
+  const isOwner =
+    loggedInUserId && item?.user?.userId && loggedInUserId === item.user.userId;
+
+  // Check Online Status
+  const isUserOnline = item?.user?.isOnline === true;
+
+  /* Send Message */
+  const handleSendMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!item || !item.user) return;
+    if (!message.trim()) return;
+    if (isOwner) return;
+
+    if (!loggedUser) return;
+
+    setSendingMessage(true);
+
+    try {
+      // Send the message using the messageAPI
+      await messageAPI.send(item.user.userId, message);
+
+      setMessage("");
+      setSuccessPopup(true);
+    } catch (err) {
+      console.error("Error sending message:", err);
+    } finally {
+      setSendingMessage(false);
+    }
+  };
+
+  /* Loading UI */
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-[#8A252C]"></div>
       </div>
+    );
+  }
 
-      <main className="max-w-7xl mx-auto w-full flex flex-col lg:flex-row gap-8 mt-6 px-6 mb-20">
-        {/* ─── LEFT CONTENT (CHAT + INFO) ───────────────────────────── */}
-        <section className="flex-1 flex flex-col gap-6">
-          {/* Chat Box */}
-          <div className="bg-white border border-neutral-200 rounded-xl shadow-sm p-6">
-            {/* Header */}
-            <div className="flex justify-between items-center border-b border-gray-200 pb-4">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full bg-[#8A252C] flex items-center justify-center text-white font-semibold">
-                  JS
-                </div>
-                <div>
-                  <p className="font-bold">John Smith</p>
-                  <p className="text-sm text-green-600">● Online now</p>
-                </div>
-              </div>
+  if (!item) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 gap-4">
+        <p className="text-gray-500 font-medium">Item not found.</p>
+        <Link
+          href="/lost-and-found"
+          className="text-[#8A252C] hover:underline font-bold"
+        >
+          Back to Lost & Found
+        </Link>
+      </div>
+    );
+  }
 
-              <div className="flex items-center gap-3">
-                <button className="flex items-center gap-2 bg-[#FFD700] text-black px-4 py-2 rounded-lg font-medium">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="16"
-                    height="16"
-                    fill="none"
-                    viewBox="0 0 16 16"
-                  >
-                    <path
-                      d="M12.667 2H12V.667h-1.333V2H5.333V.667H4V2h-.667A1.333 1.333 0 0 0 2 3.333V12.667A1.333 1.333 0 0 0 3.333 14H12.667A1.333 1.333 0 0 0 14 12.667V3.333A1.333 1.333 0 0 0 12.667 2ZM12.667 12.667H3.333V5.333H12.667V12.667ZM4.667 6.667H8V10H4.667V6.667Z"
-                      fill="black"
-                    />
-                  </svg>
-                  Schedule Meeting
-                </button>
+  const ownerPic = item.user?.profileImageUrl || "/profile.png";
 
-                <button className="w-10 h-10 border border-gray-300 rounded-lg flex items-center justify-center">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="20"
-                    height="20"
-                    fill="none"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      d="M10 6.667c-1.842 0-3.334 1.492-3.334 3.333 0 1.842 1.492 3.334 3.334 3.334 1.841 0 3.333-1.492 3.333-3.334 0-1.841-1.492-3.333-3.333-3.333Zm0-5A8.333 8.333 0 1 0 10 18.333 8.333 8.333 0 0 0 10 1.667ZM10 16.667A6.667 6.667 0 1 1 10 3.333a6.667 6.667 0 0 1 0 13.334Z"
-                      fill="#666"
-                    />
-                  </svg>
-                </button>
-              </div>
-            </div>
+  return (
+    <RequireAuth>
+      <div className="min-h-screen bg-gray-50 text-gray-900 flex flex-col font-sans">
+        {/* Breadcrumb */}
+        <div className="max-w-7xl mx-auto w-full mt-8 px-6 flex items-center gap-2">
+          <Link
+            href="/lost-and-found"
+            className="inline-flex items-center gap-2 text-sm font-bold text-[#8A252C] hover:text-[#701e23] transition-colors bg-white border border-gray-200 px-4 py-2 rounded-lg shadow-sm"
+          >
+            <span>←</span> Back to Lost & Found
+          </Link>
+        </div>
 
-            {/* Chat Body */}
-            <div className="h-[480px] bg-gray-50 mt-4 rounded-lg border border-gray-200"></div>
-
-            {/* Chat Input */}
-            <div className="flex items-center mt-4 border border-gray-200 rounded-xl px-4 py-3 bg-white">
-              <button className="w-10 h-10 bg-[#8A252C] rounded-lg flex items-center justify-center mr-3">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="20"
-                  height="20"
-                  fill="none"
-                  viewBox="0 0 20 20"
-                >
-                  <path
-                    d="M1.675 17.5 19.167 10 1.675 2.5l-.008 5.833L14.167 10 1.667 11.667l.008 5.833Z"
-                    fill="white"
-                  />
-                </svg>
-              </button>
-              <input
-                type="text"
-                placeholder="Type your message..."
-                className="flex-1 outline-none text-sm bg-transparent"
-              />
-              <div className="flex items-center gap-2">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="20"
-                  height="20"
-                  fill="none"
-                  viewBox="0 0 20 20"
-                  className="text-gray-500"
-                >
-                  <path
-                    d="M13.75 5v9.583c0 1.842-1.492 3.334-3.333 3.334S7.083 16.425 7.083 14.583V4.167c0-1.15.933-2.083 2.083-2.083s2.084.933 2.084 2.083v8.75a.833.833 0 0 1-1.667 0V5H8.333v7.917a2.083 2.083 0 1 0 4.167 0V4.167a3.333 3.333 0 0 0-6.667 0v10.416A4.583 4.583 0 0 0 10.417 19.167 4.583 4.583 0 0 0 15 14.583V5h-1.25Z"
-                    fill="#666"
-                  />
-                </svg>
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="16"
-                  height="16"
-                  fill="none"
-                  viewBox="0 0 16 16"
-                >
-                  <path
-                    d="M14 12.667V3.333A1.333 1.333 0 0 0 12.667 2H3.333A1.333 1.333 0 0 0 2 3.333v9.334A1.333 1.333 0 0 0 3.333 14h9.334A1.333 1.333 0 0 0 14 12.667ZM5.667 9l1.666 2.007L9.667 8l3 4H3.333L5.667 9Z"
-                    fill="#666"
-                  />
-                </svg>
-                <p className="text-sm">Photo</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Item Details */}
-          <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
-            <h2 className="font-bold mb-4">Item Details</h2>
-            <div className="flex items-center gap-4">
-              <Image
-                src="/Iphone-14.jpeg"
-                alt="Black iPhone 14 Pro"
-                width={60}
-                height={60}
-                className="rounded-lg object-cover"
-              />
-              <div>
-                <p className="font-medium text-sm">Black iPhone 14 Pro</p>
-                <p className="text-xs text-gray-600">Library 3rd Floor</p>
-                <span className="inline-block bg-[#FFE4E1] text-[#8A252C] text-[10px] font-medium px-3 py-1 rounded-full mt-2">
-                  LOST
-                </span>
-              </div>
-            </div>
-            <Link
-              href="/lost-and-found/view"
-              className="text-[#8A252C] text-sm font-medium mt-3 inline-block hover:underline"
-            >
-              View full details →
-            </Link>
-          </div>
-
-          {/* Safety Guidelines */}
-          <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
-            <h2 className="font-bold mb-4">Safety Guidelines</h2>
-            <ul className="text-sm text-gray-700 space-y-2">
-              <li>⚫ Always meet in public campus locations</li>
-              <li>⚫ Verify item details before meeting</li>
-              <li>⚫ Bring a friend if possible</li>
-              <li>⚫ Report any suspicious behavior</li>
-            </ul>
-          </div>
-
-          {/* Quick Actions */}
-          <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
-            <h2 className="font-bold mb-4">Quick Actions</h2>
-            <div className="space-y-3 text-sm font-medium">
-              <button className="w-full bg-gray-50 py-2 rounded-lg hover:bg-gray-100 text-black flex items-center justify-center gap-2">
-                📍 Suggest Location
-              </button>
-              <button className="w-full bg-gray-50 py-2 rounded-lg hover:bg-gray-100 text-black flex items-center justify-center gap-2">
-                ✉️ Share Contact
-              </button>
-              <button className="w-full bg-[#FFE4E1] py-2 rounded-lg hover:bg-[#FFD6D6] text-[#8A252C] flex items-center justify-center gap-2">
-                🚨 Report Issue
-              </button>
-            </div>
-          </div>
-
-          {/* User Profile */}
-          <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
-            <h2 className="font-bold mb-4">User Profile</h2>
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 rounded-full bg-[#8A252C] flex items-center justify-center text-white font-semibold">
-                JS
-              </div>
-              <div>
-                <p className="font-medium">John Smith</p>
-                <p className="text-xs text-gray-600">Computer Science</p>
-                <p className="text-xs text-gray-600">
-                  Member since Jan 2024
+        <main className="max-w-7xl mx-auto w-full flex flex-col lg:flex-row gap-8 mt-8 px-6 mb-20">
+          {/* LEFT SECTION: CONTACT FORM & ITEM PREVIEW */}
+          <section className="flex-1 flex flex-col gap-8">
+            {/* 1. CONTACT FORM CARD */}
+            <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-8">
+              <div className="border-b border-gray-100 pb-6 mb-6">
+                <h1 className="text-2xl font-extrabold text-[#8A252C] mb-1">
+                  Contact Owner
+                </h1>
+                <p className="text-gray-500 text-sm">
+                  Send a secure message to arrange a meetup.
                 </p>
               </div>
-            </div>
-            <div className="flex justify-around text-center">
-              <div>
-                <p className="text-[#8A252C] font-bold text-lg">3</p>
-                <p className="text-xs text-gray-600">Items Posted</p>
-              </div>
-              <div>
-                <p className="text-[#8A252C] font-bold text-lg">98%</p>
-                <p className="text-xs text-gray-600">Response Rate</p>
-              </div>
-            </div>
-          </div>
-        </section>
 
-        {/* ─── RIGHT SIDEBAR ───────────────────────────── */}
-        <aside className="w-full lg:w-[340px] flex flex-col gap-6">
-          {/* Tips for Success */}
-          <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
-            <h3 className="text-xl font-bold text-[#8A252C] mb-4">
-              Tips for Success
-            </h3>
-            <ul className="space-y-3 text-sm">
-              <li>
-                ⭐ <span className="font-bold">Be Specific</span> — Include
-                brand names, colors, and unique features.
-              </li>
-              <li>
-                ⚡ <span className="font-bold">Act Quickly</span> — Report items
-                as soon as possible for best results.
-              </li>
-              <li>
-                📸 <span className="font-bold">Add Photos</span> — Images
-                increase chances of successful matches.
-              </li>
-            </ul>
-          </div>
+              {/* Recipient Info */}
+              <div className="flex items-center gap-4 mb-6 bg-gray-50 p-4 rounded-xl border border-gray-100">
+                <div className="w-12 h-12 rounded-full overflow-hidden border border-gray-200 relative">
+                  <Image
+                    src={ownerPic}
+                    alt="Owner"
+                    fill
+                    className="object-cover"
+                    unoptimized
+                  />
+                </div>
+                <div>
+                  <p className="font-bold text-gray-900 text-lg">
+                    {item.user?.name || "Anonymous"}
+                  </p>
+                  
+                  {/* Dynamic Online Status */}
+                  <div className="flex items-center gap-2">
+                    <span 
+                        className={`w-2 h-2 rounded-full ${isUserOnline ? 'bg-green-500' : 'bg-gray-400'}`}
+                    ></span>
+                    <p className={`text-xs font-medium ${isUserOnline ? 'text-green-600' : 'text-gray-500'}`}>
+                      {isUserOnline ? 'Online' : 'Offline'}
+                    </p>
+                  </div>
 
-          {/* Recent Activity */}
-          <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
-            <h3 className="text-xl font-bold text-[#8A252C] mb-4">
-              Recent Activity
-            </h3>
-            <ul className="space-y-3 text-sm">
-              <li className="flex justify-between items-center bg-gray-50 px-4 py-2 rounded-lg">
-                <div>
-                  <p className="font-bold">iPhone Found</p>
-                  <p className="text-xs text-gray-600">Library 3rd Floor</p>
                 </div>
-                <span className="text-xs text-gray-500">2h ago</span>
-              </li>
-              <li className="flex justify-between items-center bg-gray-50 px-4 py-2 rounded-lg">
-                <div>
-                  <p className="font-bold">Backpack Lost</p>
-                  <p className="text-xs text-gray-600">Cafeteria Area</p>
-                </div>
-                <span className="text-xs text-gray-500">4h ago</span>
-              </li>
-              <li className="flex justify-between items-center bg-gray-50 px-4 py-2 rounded-lg">
-                <div>
-                  <p className="font-bold">Wallet Found</p>
-                  <p className="text-xs text-gray-600">Student Center</p>
-                </div>
-                <span className="text-xs text-gray-500">6h ago</span>
-              </li>
-            </ul>
-          </div>
-
-          {/* Similar Items */}
-          <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
-            <h3 className="text-lg font-bold mb-4">Similar Items</h3>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between border border-gray-200 rounded-lg p-3">
-                <div>
-                  <p className="font-semibold text-sm">iPhone 13 Pro</p>
-                  <p className="text-xs text-gray-600">Engineering Building</p>
-                </div>
-                <span className="px-3 py-1 rounded-full text-[10px] font-semibold bg-[#E8F5E8] text-[#2D5016]">
-                  FOUND
-                </span>
               </div>
-              <div className="flex items-center justify-between border border-gray-200 rounded-lg p-3">
-                <div>
-                  <p className="font-semibold text-sm">Black Samsung Galaxy</p>
-                  <p className="text-xs text-gray-600">Student Center</p>
+
+              {/* Message Input */}
+              <form onSubmit={handleSendMessage} className="space-y-4">
+                {isOwner ? (
+                  <div className="bg-yellow-50 border border-yellow-100 text-yellow-800 p-6 rounded-xl text-center">
+                    <span className="text-2xl block mb-2">⚠️</span>
+                    <p className="font-bold">This is your item.</p>
+                    <p className="text-sm mt-1">
+                      You cannot send a message to yourself.
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    <div>
+                      <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">
+                        Your Message
+                      </label>
+                      <textarea
+                        value={message}
+                        onChange={(e) => setMessage(e.target.value)}
+                        placeholder={`Hi ${
+                          item.user?.name || "there"
+                        }, I think I found your item...`}
+                        className="w-full border border-gray-300 bg-white rounded-xl p-4 text-base outline-none focus:ring-2 focus:ring-[#8A252C] focus:border-transparent transition-all h-40 resize-none placeholder-gray-400"
+                      ></textarea>
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={sendingMessage}
+                      className="w-full bg-[#8A252C] text-white font-bold py-4 rounded-xl shadow-md hover:bg-[#701e23] disabled:opacity-70 disabled:cursor-not-allowed transition-all transform active:scale-[0.99]"
+                    >
+                      {sendingMessage ? (
+                        <span className="flex items-center justify-center gap-2">
+                          <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                          Sending...
+                        </span>
+                      ) : (
+                        "Send Message"
+                      )}
+                    </button>
+                  </>
+                )}
+              </form>
+            </div>
+
+            {/* 2. ITEM REFERENCED CARD */}
+            <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6 flex flex-col sm:flex-row gap-6 items-start sm:items-center">
+              
+              {/* ✅ CONDITIONAL IMAGE RENDERING */}
+              {item.imageUrl && (
+                <div className="relative w-24 h-24 flex-shrink-0 bg-gray-100 rounded-lg overflow-hidden border border-gray-200">
+                    <Image
+                        src={item.imageUrl}
+                        alt={item.title}
+                        fill
+                        className="object-cover"
+                        unoptimized
+                    />
                 </div>
-                <span className="px-3 py-1 rounded-full text-[10px] font-semibold bg-[#FFE4E1] text-[#8A252C]">
-                  LOST
-                </span>
+              )}
+              
+              <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide border ${
+                          item.status === "LOST" ? "bg-red-50 text-red-700 border-red-100" : "bg-green-50 text-green-700 border-green-100"
+                      }`}>
+                          {item.status}
+                      </span>
+                      <span className="text-xs text-gray-500 font-medium bg-gray-100 px-2 py-0.5 rounded">
+                          {item.category}
+                      </span>
+                  </div>
+                  
+                  <h3 className="text-xl font-bold text-gray-900 mb-1">{item.title}</h3>
+                  <p className="text-sm text-gray-500 mb-3 flex items-center gap-1">
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                      {item.location}
+                  </p>
+
+                  <Link
+                    href={`/lost-and-found/view?id=${item.id}`}
+                    className="text-sm font-bold text-[#8A252C] hover:underline inline-flex items-center gap-1"
+                  >
+                    View Full Item Details <span>→</span>
+                  </Link>
               </div>
             </div>
+
+          </section>
+
+          {/* RIGHT SIDEBAR */}
+          <aside className="w-full lg:w-[360px] flex flex-col gap-6">
+
+            <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
+              <h3 className="text-lg font-bold text-[#8A252C] mb-4 flex items-center gap-2">
+                <Lightbulb className="w-5 h-5" />
+                Tips for Success
+              </h3>
+              <ul className="space-y-4">
+                {[
+                    { title: "Be Specific", text: "Mention specific details to verify ownership." },
+                    { title: "Act Quickly", text: "Send a message as soon as you can." },
+                    { title: "Ask for Proof", text: "If returning an item, ask for photos or unique ID." }
+                ].map((tip, i) => (
+                    <li key={i} className="bg-gray-50 p-3 rounded-lg">
+                        <p className="font-bold text-sm text-gray-900">{tip.title}</p>
+                        <p className="text-xs text-gray-600 mt-1">{tip.text}</p>
+                    </li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
+              <h2 className="text-lg font-bold text-[#8A252C] mb-4 flex items-center gap-2">
+                <Shield className="w-5 h-5" />
+                Safety Guidelines
+              </h2>
+              <ul className="space-y-3 text-sm text-gray-700">
+                <li className="flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-gray-400"></span>
+                    Meet in busy, public campus areas.
+                </li>
+                <li className="flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-gray-400"></span>
+                    Bring a friend if possible.
+                </li>
+                <li className="flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-gray-400"></span>
+                    Verify item details before handing over.
+                </li>
+              </ul>
+            </div>
+
+          </aside>
+
+        </main>
+
+        {/* SUCCESS POPUP */}
+        {successPopup && (
+          <div className="fixed inset-0 flex items-center justify-center bg-black/40 z-50 backdrop-blur-sm">
+            <div className="bg-white rounded-2xl shadow-xl p-8 flex flex-col items-center text-center w-[300px] animate-popup border border-gray-100">
+              
+              <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none"
+                    viewBox="0 0 24 24" strokeWidth={3} stroke="#16A34A"
+                    className="w-8 h-8">
+                  <path strokeLinecap="round" strokeLinejoin="round"
+                        d="M5 13l4 4L19 7"/>
+                </svg>
+              </div>
+
+              <p className="text-xl font-bold text-gray-900">Message Sent!</p>
+              <p className="text-sm text-gray-500 mt-2 mb-6">The owner has been notified.</p>
+
+              <button
+                onClick={() => setSuccessPopup(false)}
+                className="w-full bg-gray-100 text-gray-700 font-bold py-3 rounded-xl hover:bg-gray-200 transition-colors"
+              >
+                Close
+              </button>
+
+            </div>
           </div>
-        </aside>
-      </main>
-    </div>
+        )}
+
+        <style jsx>{`
+          .animate-popup {
+            animation: popupAnim 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+          }
+          @keyframes popupAnim {
+            from { opacity: 0; transform: scale(0.8); }
+            to { opacity: 1; transform: scale(1); }
+          }
+        `}</style>
+
+      </div>
+    </RequireAuth>
+    
   );
 }

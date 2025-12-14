@@ -1,12 +1,12 @@
-"use client";
+"use client"
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback } from "react"
 
 type T = {
-  name: string;
-  subtitle: string;   // e.g., program / role
-  quote: string;      // their experience
-};
+  name: string
+  subtitle: string 
+  quote: string
+}
 
 const DATA: T[] = [
   {
@@ -27,63 +27,53 @@ const DATA: T[] = [
     quote:
       "I found my umbrella the same day thanks to quick responses and the Lost & Found board. Love how simple the flow is!",
   },
-];
+]
 
 export default function Testimonials() {
-  const [index, setIndex] = useState(0);
-  const total = DATA.length;
+  const [index, setIndex] = useState(0)
+  const total = DATA.length
 
-  const next = useCallback(() => setIndex((i) => (i + 1) % total), [total]);
-  const prev = useCallback(() => setIndex((i) => (i - 1 + total) % total), [total]);
+  const next = useCallback(() => setIndex((i) => (i + 1) % total), [total])
+  const prev = useCallback(() => setIndex((i) => (i - 1 + total) % total), [total])
 
-  const active = DATA[index];
+  const active = DATA[index]
 
-  // Derive initials nicely from the name
   const initials = useMemo(() => {
     return active.name
       .split(" ")
       .filter(Boolean)
       .slice(0, 2)
       .map((n) => n[0]!.toUpperCase())
-      .join("");
-  }, [active.name]);
+      .join("")
+  }, [active.name])
 
   return (
     <section className="py-12 sm:py-16">
       <div
         className="relative mx-auto max-w-4xl rounded-2xl bg-[#f8f9fa] px-5 sm:px-6 py-8 sm:py-10 shadow"
         onKeyDown={(e) => {
-          if (e.key === "ArrowRight") next();
-          if (e.key === "ArrowLeft") prev();
+          if (e.key === "ArrowRight") next()
+          if (e.key === "ArrowLeft") prev()
         }}
         tabIndex={0}
         aria-roledescription="carousel"
       >
-        {/* Slide content */}
         <div className="mx-auto grid place-items-center text-center transition-all duration-300">
           <div className="grid h-16 w-16 sm:h-20 sm:w-20 place-items-center rounded-full border-4 border-[#ffd700] bg-[#8a252c] text-white text-xl sm:text-2xl font-bold">
             {initials}
           </div>
 
-          <p className="mt-3 sm:mt-4 text-lg sm:text-xl font-bold text-[#8a252c]">
-            {active.name}
-          </p>
+          <p className="mt-3 sm:mt-4 text-lg sm:text-xl font-bold text-[#8a252c]">{active.name}</p>
           <p className="text-[#666] text-sm sm:text-base">{active.subtitle}</p>
 
-          {/* Experience text */}
-          <p className="mt-3 max-w-2xl px-2 text-sm sm:text-base text-black/75">
-            “{active.quote}”
-          </p>
+          <p className="mt-3 max-w-2xl px-2 text-sm sm:text-base text-black/75">“{active.quote}”</p>
 
-          {/* Dots */}
           <div className="mt-4 flex gap-2" aria-label="Select testimonial">
             {DATA.map((_, i) => (
               <button
                 key={i}
                 onClick={() => setIndex(i)}
-                className={`h-2 w-2 rounded-full transition ${
-                  i === index ? "bg-[#8a252c]" : "bg-gray-300"
-                }`}
+                className={`h-2 w-2 rounded-full transition ${i === index ? "bg-[#8a252c]" : "bg-gray-300"}`}
                 aria-label={`Slide ${i + 1}`}
                 aria-current={i === index}
               />
@@ -91,7 +81,6 @@ export default function Testimonials() {
           </div>
         </div>
 
-        {/* Arrows */}
         <button
           onClick={prev}
           aria-label="Previous"
@@ -113,5 +102,5 @@ export default function Testimonials() {
         </button>
       </div>
     </section>
-  );
+  )
 }

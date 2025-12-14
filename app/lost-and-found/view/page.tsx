@@ -1,275 +1,289 @@
-"use client";
+"use client"
 
-import Image from "next/image";
-import Link from "next/link";
-import React, { JSX } from "react";
+import Image from "next/image"
+import Link from "next/link"
+import { useState, useEffect } from "react"
+import { useSearchParams } from "next/navigation"
+import { lostFoundAPI } from "@/lib/api"
+import RequireAuth from "@/components/auth/require-auth"
+import { Shield } from "lucide-react"
 
-export default function LostItemViewPage(): JSX.Element {
+interface Item {
+  id: number
+  title: string
+  description: string
+  location: string
+  category: string
+  status: "LOST" | "FOUND"
+  imageUrl?: string
+  createdAt: string
+  user?: { 
+    userId: number
+    name: string
+    email: string
+    role?: string
+    profileImageUrl?: string
+    isOnline?: boolean
+  }
+  isUrgent?: boolean
+}
+
+const UserAvatar = ({ name, src }: { name: string; src?: string }) => {
+  if (src) {
+    return (
+      <Image
+        src={src}
+        alt={name}
+        width={48}
+        height={48}
+        className="rounded-full object-cover w-12 h-12 border border-gray-200"
+        unoptimized
+      />
+    );
+  }
+  const initial = name ? name.charAt(0).toUpperCase() : "?";
   return (
-    <div className="min-h-screen bg-[#fafafa] text-gray-900 flex flex-col">
-      {/* ─── BREADCRUMB ───────────────────────────── */}
-      <div className="max-w-7xl mx-auto w-full mt-8 px-6 flex items-center gap-2 text-sm text-[#666]">
-        <Link href="/lost-and-found" className="hover:underline">
-          Lost &amp; Found
-        </Link>
-        <span>/</span>
-        <p className="font-medium text-[#8A252C]">Black iPhone 14 Pro</p>
-      </div>
-
-      {/* ─── MAIN CONTENT ───────────────────────────── */}
-      <main className="max-w-7xl mx-auto w-full flex flex-col lg:flex-row gap-8 mt-6 px-6 mb-20">
-        {/* LEFT SECTION – ITEM DETAILS */}
-        <div className="flex-1 bg-white border border-gray-200 rounded-xl shadow-sm p-8">
-          {/* Tags */}
-          <div className="flex items-center gap-2 mb-4 flex-wrap">
-            <span className="px-3 py-1 rounded-full bg-[#FFE4E1] text-[#8A252C] text-xs font-semibold">
-              LOST
-            </span>
-            <span className="px-3 py-1 rounded-full bg-[#FFE4E1] text-[#8A252C] text-xs font-semibold">
-              URGENT
-            </span>
-            <span className="px-3 py-1 rounded-full bg-gray-200 text-gray-700 text-xs font-semibold">
-              Electronics
-            </span>
-          </div>
-
-          {/* Title + Icons */}
-          <div className="flex items-start justify-between mb-3">
-            <h1 className="text-3xl font-extrabold">Black iPhone 14 Pro</h1>
-            <div className="flex items-center gap-2">
-              <button className="w-10 h-10 flex items-center justify-center border border-gray-300 rounded-lg hover:bg-gray-50">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                  className="w-5 h-5 text-gray-500"
-                >
-                  <path d="M14.1667 2.5H5.83335C4.91669 2.5 4.16669 3.25 4.16669 4.16667V17.5L10 15L15.8334 17.5V4.16667C15.8334 3.25 15.0834 2.5 14.1667 2.5Z" />
-                </svg>
-              </button>
-              <button className="w-10 h-10 flex items-center justify-center border border-gray-300 rounded-lg hover:bg-gray-50">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 15 20"
-                  strokeWidth={1.5}
-                  stroke="currentColor"
-                  className="w-[15px] h-5 text-gray-500"
-                >
-                  <path d="M8 1.7c.9 0 1.7.8 1.7 1.7S8.9 5 8 5 6.3 4.2 6.3 3.3 7.1 1.7 8 1.7ZM15.5 7.5V5.8L10.5.8 9.2 2.1l2.3 2.2c-.8-.1-1.6-.2-2.4-.2-2.5 0-4.7 1-6.2 2.3l1.3 1.3c1.4-1 3.1-1.6 4.9-1.6s3.5.6 4.9 1.6L15.5 7.5ZM8 6.7A5 5 0 1 0 8 16.7a5 5 0 0 0 0-10Zm0 8.3A3.7 3.7 0 1 1 8 8.3a3.7 3.7 0 0 1 0 7Z" />
-                </svg>
-              </button>
-            </div>
-          </div>
-
-          {/* Metadata */}
-          <div className="flex flex-wrap items-center gap-4 text-sm text-[#666] mb-6">
-            <div className="flex items-center gap-1">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="currentColor"
-                viewBox="0 0 16 16"
-                className="w-4 h-4 text-gray-500"
-              >
-                <path d="M8 1.3A4.7 4.7 0 0 0 3.3 6c0 3.5 4.7 8.7 4.7 8.7S12.7 9.5 12.7 6A4.7 4.7 0 0 0 8 1.3Zm0 6.3a2 2 0 1 1 0-4 2 2 0 0 1 0 4Z" />
-              </svg>
-              <p>Library 3rd Floor</p>
-            </div>
-            <div className="flex items-center gap-1">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="currentColor"
-                viewBox="0 0 16 16"
-                className="w-4 h-4 text-gray-500"
-              >
-                <path d="M8 1.3A6.7 6.7 0 1 0 8 14.7 6.7 6.7 0 0 0 8 1.3Zm.7 10H7.3V10h1.4v1.3Zm0-2.7H7.3V4.7h1.4v3.9Z" />
-              </svg>
-              <p>Lost on March 15, 2024</p>
-            </div>
-            <div className="flex items-center gap-1">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="currentColor"
-                viewBox="0 0 16 16"
-                className="w-4 h-4 text-gray-500"
-              >
-                <path d="M8 1.3A6.7 6.7 0 1 0 8 14.7 6.7 6.7 0 0 0 8 1.3Zm.7 10H7.3V10h1.4v1.3Zm0-2.7H7.3V4.7h1.4v3.9Z" />
-              </svg>
-              <p>Reported 2 hours ago</p>
-            </div>
-          </div>
-
-          {/* Image */}
-          <div className="w-full h-56 border border-gray-300 rounded-lg overflow-hidden flex items-center justify-center mb-8">
-            <Image
-              src="/Iphone-14.jpeg"
-              alt="Black iPhone 14 Pro"
-              width={500}
-              height={500}
-              className="object-contain w-full h-full"
-            />
-          </div>
-
-          {/* Description */}
-          <div className="mb-8">
-            <h2 className="text-xl font-bold mb-2">Description</h2>
-            <p className="text-gray-700 text-sm leading-relaxed">
-              Black iPhone 14 Pro with cracked screen protector. Has a red case
-              with some scratches on the corners. The phone was last seen in the
-              Library on the 3rd floor near the study tables. It contains
-              important personal data and work files. Please contact me if found
-              – there will be a reward for its safe return.
-            </p>
-          </div>
-
-          {/* Additional Details */}
-          <div className="bg-gray-50 rounded-lg p-6 mb-8">
-            <h3 className="text-[#8A252C] font-bold mb-4">
-              Additional Details
-            </h3>
-            <div className="grid grid-cols-2 gap-y-2 text-sm">
-              <p className="text-gray-600">
-                Brand: <span className="font-medium text-black">Apple</span>
-              </p>
-              <p className="text-gray-600">
-                Model:{" "}
-                <span className="font-medium text-black">iPhone 14 Pro</span>
-              </p>
-              <p className="text-gray-600">
-                Color:{" "}
-                <span className="font-medium text-black">Space Black</span>
-              </p>
-              <p className="text-gray-600">
-                Storage: <span className="font-medium text-black">256GB</span>
-              </p>
-              <p className="text-gray-600">
-                Condition:{" "}
-                <span className="font-medium text-black">
-                  Good (cracked protector)
-                </span>
-              </p>
-              <p className="text-gray-600">
-                Case:{" "}
-                <span className="font-medium text-black">Red silicone</span>
-              </p>
-            </div>
-          </div>
-
-          {/* Location Details */}
-          <div>
-            <h3 className="text-xl font-bold mb-3">Location Details</h3>
-            <div className="bg-gray-50 rounded-lg p-4">
-              <div className="flex items-start gap-3">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="#8A252C"
-                  viewBox="0 0 24 24"
-                  className="w-6 h-6"
-                >
-                  <path d="M12 2C8.13 2 5 5.13 5 9C5 14.25 12 22 12 22C12 22 19 14.25 19 9C19 5.13 15.87 2 12 2ZM12 11.5C10.62 11.5 9.5 10.38 9.5 9C9.5 7.62 10.62 6.5 12 6.5C13.38 6.5 14.5 7.62 14.5 9C14.5 10.38 13.38 11.5 12 11.5Z" />
-                </svg>
-                <div>
-                  <p className="font-bold">Library 3rd Floor</p>
-                  <p className="text-sm text-gray-600">
-                    Near the study tables, close to the computer section
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    Last seen: March 15, 2024 at 2:30 PM
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* RIGHT SIDEBAR – OWNER + TIPS */}
-        <aside className="w-full lg:w-[370px] flex flex-col gap-8">
-          {/* Owner Info */}
-          <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
-            <div className="flex items-center gap-3 mb-3">
-              <Image
-                src="/user-avatar.png"
-                alt="John Smith"
-                width={50}
-                height={50}
-                className="rounded-full object-cover"
-              />
-              <div>
-                <p className="font-bold">John Smith</p>
-                <p className="text-sm text-gray-600">
-                  Computer Science Student
-                </p>
-                <p className="text-xs text-green-600">● Active 5 minutes ago</p>
-              </div>
-            </div>
-            <div className="text-sm text-gray-700 mb-3">
-              <p>
-                Member since{" "}
-                <span className="font-medium text-black">January 2024</span>
-              </p>
-              <p>
-                Items posted{" "}
-                <span className="font-medium text-black">3 items</span>
-              </p>
-            </div>
-            <button className="w-full bg-[#8A252C] text-white font-bold py-3 rounded-lg mt-3 hover:opacity-90">
-              Contact Owner
-            </button>
-            <button className="w-full border-2 border-[#8A252C] text-[#8A252C] font-bold py-3 rounded-lg mt-3 hover:bg-[#8A252C]/10">
-              Send Message
-            </button>
-          </div>
-
-          {/* Safety Tips */}
-          <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
-            <h3 className="text-lg font-bold mb-4">Safety Tips</h3>
-            <ul className="space-y-2 text-sm text-gray-700">
-              <li>⚫ Meet in a public place on campus</li>
-              <li>⚫ Verify item details before meeting</li>
-              <li>⚫ Bring a friend if possible</li>
-              <li>⚫ Report suspicious activity</li>
-            </ul>
-          </div>
-
-          {/* Similar Items */}
-          <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
-            <h3 className="text-lg font-bold mb-4">Similar Items</h3>
-            <div className="space-y-3">
-              {[
-                {
-                  title: "iPhone 13 Pro",
-                  location: "Engineering Building",
-                  status: "FOUND",
-                  color: "bg-[#E8F5E8]",
-                  textColor: "text-[#2D5016]",
-                },
-                {
-                  title: "Black Samsung Galaxy",
-                  location: "Student Center",
-                  status: "LOST",
-                  color: "bg-[#FFE4E1]",
-                  textColor: "text-[#8A252C]",
-                },
-              ].map((item, i) => (
-                <div
-                  key={i}
-                  className="flex items-center justify-between border border-gray-200 rounded-lg p-3"
-                >
-                  <div>
-                    <p className="font-semibold text-sm">{item.title}</p>
-                    <p className="text-xs text-gray-600">{item.location}</p>
-                  </div>
-                  <span
-                    className={`px-3 py-1 rounded-full text-[10px] font-semibold ${item.color} ${item.textColor}`}
-                  >
-                    {item.status}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </aside>
-      </main>
+    <div className="w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold bg-blue-100 text-blue-700 ring-4 ring-white shadow-sm">
+      {initial}
     </div>
   );
+};
+
+export default function LostItemViewPage() {
+  const searchParams = useSearchParams()
+  const itemId = searchParams.get("id")
+  const [item, setItem] = useState<Item | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [isFullScreen, setIsFullScreen] = useState(false);
+
+  useEffect(() => {
+    if (!itemId) return
+
+    const fetchItem = async () => {
+      try {
+        const data = await lostFoundAPI.getById(Number.parseInt(itemId))
+        setItem(data)
+      } catch (err) {
+        console.error("Error fetching item:", err)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchItem()
+  }, [itemId])
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-[#8a252c]"></div>
+      </div>
+    )
+  }
+
+  if (!item) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 gap-4">
+        <p className="text-gray-500 font-medium">Item not found.</p>
+        <Link href="/lost-and-found" className="text-[#8A252C] hover:underline font-bold">Back to Lost & Found</Link>
+      </div>
+    )
+  }
+
+  const isOwnerOnline = item.user?.isOnline === true;
+
+  return (
+    <RequireAuth>
+      <div className="min-h-screen bg-gray-50 text-gray-900 flex flex-col font-sans">
+      
+        {/* Back Navigation */}
+        <div className="max-w-7xl mx-auto w-full mt-8 px-6 flex items-center gap-2">
+          <Link 
+              href="/lost-and-found" 
+              className="inline-flex items-center gap-2 text-sm font-bold text-[#8A252C] hover:text-[#701e23] transition-colors bg-white border border-gray-200 px-4 py-2 rounded-lg shadow-sm"
+          >
+              <span>←</span> Back to Lost & Found
+          </Link>
+        </div>
+
+        <main className="max-w-7xl mx-auto w-full flex flex-col lg:flex-row gap-8 mt-8 px-6 mb-20">
+          
+          {/* LEFT COLUMN: ITEM DETAILS */}
+          <div className="flex-1 bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+              
+              {/* Header Section */}
+              <div className="p-8 border-b border-gray-100">
+                  <div className="flex flex-wrap items-center gap-3 mb-4">
+                      <span
+                          className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide border ${
+                          item.status === "LOST" ? "bg-red-50 text-red-700 border-red-100" : "bg-green-50 text-green-700 border-green-100"
+                          }`}
+                      >
+                          {item.status}
+                      </span>
+                      {item.isUrgent && (
+                          <span className="px-3 py-1 rounded-full bg-yellow-100 text-yellow-800 border border-yellow-200 text-xs font-bold uppercase tracking-wide">
+                              URGENT
+                          </span>
+                      )}
+                      <span className="bg-gray-100 text-gray-600 border border-gray-200 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide">
+                          {item.category}
+                      </span>
+                  </div>
+
+                  <h1 className="text-3xl font-extrabold text-gray-900 mb-4">{item.title}</h1>
+
+                  <div className="flex flex-wrap items-center gap-6 text-sm text-gray-500">
+                      <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-400">
+                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
+                              </svg>
+                          </div>
+                          <span className="font-medium text-gray-700">{item.location}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-400">
+                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
+                              </svg>
+                          </div>
+                          <span className="font-medium text-gray-700">{new Date(item.createdAt).toLocaleDateString()}</span>
+                      </div>
+                  </div>
+              </div>
+
+              {/* Image Section - REPLACED WITH YOUR SNIPPET */}
+              {item.imageUrl && (
+                  <div className="w-full bg-gray-100 border-y border-gray-200 relative aspect-video sm:aspect-[2/1] group cursor-pointer" onClick={() => setIsFullScreen(true)}>
+                      <Image
+                          src={item.imageUrl}
+                          alt={item.title}
+                          fill
+                          className="object-contain hover:scale-[1.01] transition-transform duration-300"
+                          unoptimized
+                      />
+                      
+                      <button 
+                          onClick={() => setIsFullScreen(true)}
+                          className="absolute bottom-4 right-4 bg-white/90 hover:bg-white text-gray-800 p-2 rounded-lg shadow-md backdrop-blur-sm transition-all transform hover:scale-110 active:scale-95 group-hover:opacity-100 opacity-0 group-hover:visible"
+                          title="View Full Screen"
+                      >
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" />
+                          </svg>
+                      </button>
+
+                      {isFullScreen && item.imageUrl && (
+                        <div 
+                            className="fixed inset-0 z-[9999] bg-black/95 flex items-center justify-center p-4 animate-in fade-in duration-200"
+                            onClick={() => setIsFullScreen(false)}
+                        >
+                            {/* Close Button */}
+                            <button 
+                                onClick={() => setIsFullScreen(false)}
+                                className="absolute top-6 right-6 text-white/70 hover:text-white bg-white/10 hover:bg-white/20 rounded-full p-2 transition-all z-50"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-8 h-8">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+
+                            {/* Large Image */}
+                            <div 
+                                className="relative w-full h-full max-w-7xl max-h-[90vh]"
+                                onClick={(e) => e.stopPropagation()} 
+                            >
+                                <Image
+                                    src={item.imageUrl}
+                                    alt={item.title}
+                                    fill
+                                    className="object-contain"
+                                    unoptimized
+                                />
+                            </div>
+                        </div>
+                      )}
+                  </div>
+              )}
+
+              {/* Description */}
+              <div className="p-8">
+                  <h3 className="text-lg font-bold text-[#8A252C] mb-4">Description</h3>
+                  <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
+                      {item.description}
+                  </p>
+              </div>
+          </div>
+
+          {/* RIGHT COLUMN: SIDEBAR */}
+          <aside className="w-full lg:w-[360px] flex flex-col gap-6">
+            
+            {/* Owner Card */}
+            <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
+              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Posted By</h3>
+              <div className="flex items-center gap-4 mb-6">
+                <UserAvatar name={item.user?.name || "Anonymous"} src={item.user?.profileImageUrl} />
+                <div>
+                  <div className="flex items-center gap-2">
+                    <p className="font-bold text-gray-900 text-lg">{item.user?.name || "Anonymous"}</p>
+                    
+                    {/* Admin Badge */}
+                    {(item.user?.role === "ADMIN" || item.user?.role === "admin") && (
+                      <span className="text-[9px] font-bold bg-[#8A252C] text-white px-1.5 py-0.5 rounded tracking-wide uppercase">
+                        Admin
+                      </span>
+                    )}
+                  </div>
+                  
+                  {/* Status Indicator */}
+                  {isOwnerOnline ? (
+                      <p className="text-xs text-green-700 font-bold bg-green-100 border border-green-200 px-2 py-0.5 rounded-full inline-block mt-1">
+                          ● Online
+                      </p>
+                  ) : (
+                      <p className="text-xs text-gray-500 font-medium bg-gray-100 border border-gray-200 px-2 py-0.5 rounded-full inline-block mt-1">
+                          ○ Offline
+                      </p>
+                  )}
+                  
+                </div>
+              </div>
+              
+              <Link href={`/lost-and-found/contact?id=${item.id}`}>
+                  <button className="w-full bg-[#8A252C] text-white font-bold py-3.5 rounded-xl shadow-md hover:bg-[#701e23] transition-all transform active:scale-[0.98]">
+                      Chat with Owner
+                  </button>
+              </Link>
+
+            </div>
+
+            {/* Safety Tips Sidebar */}
+            <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
+              <h2 className="text-lg font-bold text-[#8A252C] mb-4 flex items-center gap-2">
+                <Shield className="w-5 h-5" />
+                Safety Guidelines
+              </h2>
+              <ul className="space-y-3 text-sm text-gray-700">
+                <li className="flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-gray-400"></span>
+                    Meet in busy, public campus areas.
+                </li>
+                <li className="flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-gray-400"></span>
+                    Bring a friend if possible.
+                </li>
+                <li className="flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-gray-400"></span>
+                    Verify item details before handing over.
+                </li>
+              </ul>
+            </div>
+
+          </aside>
+        </main>
+      </div>
+    </RequireAuth>
+  )
 }

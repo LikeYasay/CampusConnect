@@ -1,245 +1,222 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { notificationAPI } from "@/lib/api";
+import RequireAuth from "@/components/auth/require-auth";
+
+interface Notification {
+  id: number;
+  title: string;
+  message: string;
+  type: "REPLY" | "LIKE" | "INFO" | string;
+  isRead: boolean;
+  createdAt: string;
+  relatedItemId?: number;
+}
 
 export default function NotificationsPage() {
-  const notifications = [
-    {
-      icon: "🔍",
-      color: "#8A252C",
-      title: "Your lost item report has been viewed",
-      desc: "Someone has viewed your Black iPhone 14 Pro report from Library 3rd Floor",
-      time: "2 minutes ago",
-      urgent: true,
-      unread: true,
-    },
-    {
-      icon: "💬",
-      color: "#FFD700",
-      title: "New reply in your discussion",
-      desc: "Maria Santos replied to your post about Data Structures study group",
-      time: "15 minutes ago",
-      urgent: false,
-      unread: true,
-    },
-    {
-      icon: "✅",
-      color: "#2D5016",
-      title: "Potential match for your lost item",
-      desc: "A Blue CIT-U ID Lace was found in Engineering Building that might match your report",
-      time: "1 hour ago",
-      urgent: true,
-      unread: true,
-    },
-    {
-      icon: "🔔",
-      color: "#666",
-      title: "Welcome to Campus Connect!",
-      desc: "Thank you for joining the WILDCAT community. Start by exploring lost & found items or forum discussions.",
-      time: "2 hours ago",
-      urgent: false,
-      unread: false,
-    },
-    {
-      icon: "💬",
-      color: "#FFD700",
-      title: "Your post received 10 likes",
-      desc: "Your discussion about basketball game tonight is getting popular with fellow students",
-      time: "3 hours ago",
-      urgent: false,
-      unread: false,
-    },
-    {
-      icon: "🔍",
-      color: "#8A252C",
-      title: "Item claim request",
-      desc: "John Dela Cruz wants to claim the Red Jansport Backpack you reported found",
-      time: "5 hours ago",
-      urgent: false,
-      unread: false,
-    },
-    {
-      icon: "🔔",
-      color: "#666",
-      title: "Weekly community update",
-      desc: "This week: 47 items reported, 32 items found, 156 new forum posts. Keep up the great work!",
-      time: "1 day ago",
-      urgent: false,
-      unread: false,
-    },
-    {
-      icon: "💬",
-      color: "#FFD700",
-      title: "New discussion in Academic category",
-      desc: "Someone started a discussion about upcoming midterm exams preparation tips",
-      time: "2 days ago",
-      urgent: false,
-      unread: false,
-    },
-  ];
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState<"all" | "unread">("all");
+  const router = useRouter();
+
+  const fetchNotifications = async () => {
+    try {
+      const data = await notificationAPI.getAll();
+      setNotifications(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error("Error fetching notifications:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchNotifications();
+  }, []);
+
+  const handleNotificationClick = async (notification: Notification) => {
+    if (!notification.isRead) {
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === notification.id ? { ...n, isRead: true } : n))
+      );
+      
+      try {
+        await notificationAPI.markAsRead(notification.id);
+        window.dispatchEvent(new Event("update-nav-counts"));
+      } catch (error) {
+        console.error("Failed to mark as read", error);
+      }
+    }
+
+    if (notification.relatedItemId) {
+      router.push(`/forum/discussion?id=${notification.relatedItemId}`);
+    }
+  };
+
+  const handleMarkAllRead = async () => {
+    setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+    try {
+      await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8080"}/notifications/read-all`, {
+         method: "PUT",
+         headers: {
+             "Authorization": `Bearer ${localStorage.getItem("authToken")}`
+         }
+      });
+      window.dispatchEvent(new Event("update-nav-counts"));
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-[#8A252C]"></div>
+      </div>
+    );
+  }
+
+  const unreadCount = notifications.filter((n) => !n.isRead).length;
+
+  const filteredNotifications = notifications.filter((n) => {
+    if (filter === "unread") return !n.isRead;
+    return true;
+  });
 
   return (
-    <div className="min-h-screen bg-white text-gray-900">
-      <div className="max-w-7xl mx-auto px-6 py-10 flex flex-col">
-        {/* Back Button */}
-        <div className="flex items-center gap-2 mb-6">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 20 20"
-            strokeWidth={2}
-            stroke="#8A252C"
-            className="w-5 h-5"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12.5 15L7.5 10l5-5" />
-          </svg>
-          <Link href="/home" className="text-base font-medium text-[#8A252C] hover:underline">
-            Back
-          </Link>
-        </div>
-
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-black text-[#8A252C]">Notifications</h1>
-          <p className="text-lg text-gray-600">
-            Stay updated with your campus community activities
-          </p>
-        </div>
-
-        {/* Filter Bar (All, Unread, Urgent, Mark all as read, 3 unread) */}
-        <div className="flex flex-wrap items-center justify-between border-b border-gray-200 pb-4 mb-6">
-          <div className="flex items-center gap-3">
-            <button className="bg-[#8A252C] text-white px-4 py-2 rounded-lg text-sm font-medium">
-              All
-            </button>
-            <button className="bg-[#F8F9FA] text-black px-4 py-2 rounded-lg text-sm font-medium">
-              Unread
-            </button>
-            <button className="bg-[#F8F9FA] text-black px-4 py-2 rounded-lg text-sm font-medium">
-              Urgent
-            </button>
-          </div>
-
-          <div className="flex items-center gap-3 mt-3 lg:mt-0">
-            <button className="text-sm font-medium text-[#8A252C] hover:underline">
-              Mark all as read
-            </button>
-            <span className="w-px h-5 bg-gray-300"></span>
-            <p className="text-sm font-medium text-gray-600">3 unread</p>
-          </div>
-        </div>
-
-        {/* Main Layout */}
-        <div className="flex flex-col lg:flex-row gap-8">
-          {/* Left – Notifications List */}
-          <div className="flex-1 border border-gray-200 rounded-xl p-6 shadow-sm bg-white">
-            {notifications.map((n, i) => (
-              <div
-                key={i}
-                className={`flex justify-between items-start border border-gray-200 rounded-lg p-4 mb-3 transition ${
-                  n.unread ? "bg-[#FFF9E6]" : "bg-white hover:bg-[#F8F9FA]"
-                }`}
-              >
-                <div className="flex gap-3">
-                  <div
-                    className="w-12 h-12 flex items-center justify-center rounded-lg"
-                    style={{ backgroundColor: `${n.color}20` }}
-                  >
-                    <span className="text-2xl" style={{ color: n.color }}>
-                      {n.icon}
-                    </span>
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <p className="font-bold text-base">{n.title}</p>
-                      {n.urgent && (
-                        <span className="bg-[#FFE4E1] text-[#8A252C] text-[10px] font-medium px-2 py-0.5 rounded-full flex items-center gap-1">
-                          URGENT
-                          <span className="w-2 h-2 bg-[#8A252C] rounded-full"></span>
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-sm text-gray-600 mt-1">{n.desc}</p>
-                    <p className="text-xs text-gray-500 mt-1">{n.time}</p>
-                  </div>
-                </div>
-
-                <div className="flex flex-col items-end gap-2">
-                  {n.unread && (
-                    <button className="bg-[#8A252C] text-white text-xs font-medium px-4 py-1.5 rounded-md hover:opacity-90 transition">
-                      Mark as read
-                    </button>
-                  )}
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 16 16"
-                    strokeWidth="1.5"
-                    stroke="#000"
-                    className="w-4 h-4 cursor-pointer hover:opacity-70"
-                  >
-                    <path
-                      d="M2 4h12M6 4V2h4v2m-7 0v10a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V4H3z"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Right – Notification Settings */}
-          <div className="w-full lg:w-[340px] flex flex-col gap-6">
-            {/* Settings */}
-            <div className="border border-neutral-300 rounded-xl p-5 bg-white shadow-sm">
-              <h3 className="text-xl font-bold text-[#8A252C] mb-4">
-                Notification Settings
-              </h3>
-              {[
-                { label: "Lost & Found Updates", enabled: true },
-                { label: "Forum Replies", enabled: true },
-                { label: "System Updates", enabled: false },
-                { label: "Email Notifications", enabled: true },
-              ].map((item, i) => (
-                <div key={i} className="flex justify-between items-center mb-3">
-                  <p className="text-sm font-medium">{item.label}</p>
-                  <div
-                    className={`w-11 h-6 rounded-full flex items-center ${
-                      item.enabled ? "bg-[#8A252C]" : "bg-gray-300"
-                    }`}
-                  >
-                    <div
-                      className={`w-5 h-5 bg-white rounded-full transition ${
-                        item.enabled ? "translate-x-5" : "translate-x-0.5"
-                      }`}
-                    ></div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Stay Connected */}
-            <div className="border border-neutral-300 rounded-xl p-5 bg-white shadow-md text-center">
-              <div className="w-12 h-12 mx-auto rounded-lg bg-[#8A252C] flex items-center justify-center mb-3">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="#FFD700"
-                  className="w-6 h-6"
-                >
-                  <path d="M12 2L13.09 8.26L22 9L13.09 9.74L12 16L10.91 9.74L2 9L10.91 8.26L12 2Z" />
-                </svg>
-              </div>
-              <h4 className="text-lg font-bold">Stay Connected</h4>
-              <p className="text-sm font-medium text-gray-700 mt-1">
-                Get instant updates about your campus community activities
+    <RequireAuth>
+      <div className="min-h-screen bg-gray-50 text-gray-900 font-sans">
+        <div className="max-w-4xl mx-auto px-6 py-10 flex flex-col">
+          
+          {/* Header */}
+          <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
+            <div>
+              <h1 className="text-4xl font-black text-[#8A252C] tracking-tight">
+                Notifications
+              </h1>
+              <p className="text-lg text-gray-600 mt-2">
+                Stay updated with your campus activities
               </p>
-              <button className="mt-5 bg-[#8A252C] text-white font-bold text-sm px-6 py-2 rounded-lg hover:opacity-90 transition">
-                Enable Push Notifications
+            </div>
+            {unreadCount > 0 && (
+              <div className="bg-red-100 text-red-800 px-4 py-2 rounded-full font-bold text-sm">
+                {unreadCount} Unread messages
+              </div>
+            )}
+          </div>
+
+          {/* Filters */}
+          <div className="flex flex-wrap items-center gap-3 mb-6">
+            <FilterButton label="All" active={filter === "all"} onClick={() => setFilter("all")} />
+            <FilterButton label="Unread" active={filter === "unread"} onClick={() => setFilter("unread")} count={unreadCount} />
+
+            {unreadCount > 0 && (
+              <button onClick={handleMarkAllRead} className="ml-auto text-sm text-[#8A252C] font-medium hover:underline">
+                Mark all as read
               </button>
+            )}
+          </div>
+
+          {/* List */}
+          <div className="flex flex-col gap-4">
+            {filteredNotifications.length === 0 ? (
+              <div className="text-center py-20 bg-white rounded-xl border border-gray-200 shadow-sm">
+                <p className="text-gray-400 text-lg">No notifications found.</p>
+              </div>
+            ) : (
+              filteredNotifications.map((n) => (
+                <NotificationItem
+                  key={n.id}
+                  notification={n}
+                  onClick={() => handleNotificationClick(n)}
+                />
+              ))
+            )}
+          </div>
+        </div>
+      </div>
+    </RequireAuth>
+  );
+}
+
+// --- Sub Components ---
+
+function FilterButton({ label, active, onClick, count }: any) {
+  return (
+    <button
+      onClick={onClick}
+      className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+        active
+          ? "bg-[#8A252C] text-white shadow-md transform scale-105"
+          : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
+      }`}
+    >
+      {label}
+      {count > 0 && (
+        <span className={`ml-2 px-1.5 py-0.5 rounded-full text-xs ${active ? "bg-white/20" : "bg-gray-100"}`}>
+          {count}
+        </span>
+      )}
+    </button>
+  );
+}
+
+function NotificationItem({ notification, onClick }: { notification: Notification; onClick: () => void }) {
+  const isUnread = !notification.isRead;
+  let icon = "📢";
+  let colorClass = "bg-blue-100 text-blue-700";
+  let iconBgClass = "bg-blue-50";
+
+  if (notification.type === "LIKE") {
+    icon = "❤️";
+    colorClass = "text-red-600";
+    iconBgClass = "bg-red-50";
+  } else if (notification.type === "REPLY") {
+    icon = "💬";
+    colorClass = "text-green-600";
+    iconBgClass = "bg-green-50";
+  }
+
+  return (
+    <div
+      onClick={onClick}
+      // ✅ IMPROVED STYLING LOGIC
+      className={`relative p-5 rounded-xl border transition-all cursor-pointer group ${
+        isUnread
+          ? "bg-white border-l-4 border-l-[#8A252C] border-y-gray-200 border-r-gray-200 shadow-md transform hover:-translate-y-0.5"
+          : "bg-white border border-gray-200 hover:border-gray-300 hover:shadow-md" // Read items are now clean cards
+      }`}
+    >
+      <div className="flex gap-4 items-start">
+        {/* Icon Circle */}
+        <div className={`w-12 h-12 rounded-full flex items-center justify-center text-xl shrink-0 ${iconBgClass} ${colorClass}`}>
+          {icon}
+        </div>
+        
+        {/* Content Area */}
+        <div className="flex-1 min-w-0">
+          <div className="flex justify-between items-start gap-2">
+            <h3 className={`text-base font-bold truncate pr-2 ${isUnread ? "text-gray-900" : "text-gray-700"}`}>
+              {notification.title}
+            </h3>
+            
+            {/* Date and Dot Grouped */}
+            <div className="flex items-center gap-2 shrink-0">
+                <span className={`text-xs whitespace-nowrap ${isUnread ? "text-gray-500 font-medium" : "text-gray-400"}`}>
+                    {new Date(notification.createdAt).toLocaleDateString()}
+                </span>
+                {isUnread && (
+                    <span className="w-2.5 h-2.5 bg-[#8A252C] rounded-full animate-pulse shadow-sm"></span>
+                )}
             </div>
           </div>
+          
+          <p className={`mt-1 text-sm leading-relaxed ${isUnread ? "text-gray-800" : "text-gray-500"}`}>
+            {notification.message}
+          </p>
         </div>
       </div>
     </div>
