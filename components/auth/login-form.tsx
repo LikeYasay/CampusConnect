@@ -44,12 +44,19 @@ export function LoginForm() {
       }
 
       const data = await res.json()
+
+
+
       if (!data?.token) {
         setError("Invalid credentials")
         return
       }
 
-      
+      if (data.isActive === false) {
+        setError("Your account is not active. Please contact the administrator.")
+        return
+      }
+
       saveToken(data.token)
       try { startHeartbeat() } catch (_) { /* ignore */ }
       router.push("/")
@@ -89,9 +96,9 @@ export function LoginForm() {
           <input type="checkbox" className="rounded border-gray-300" />
           <span className="text-gray-600">Remember me</span>
         </label>
-        <Link href="#" className="text-[#8a252c] font-medium hover:underline">
+        {/* <Link href="#" className="text-[#8a252c] font-medium hover:underline">
           Forgot password?
-        </Link>
+        </Link> */}
       </div>
 
       <SubmitButton loading={loading} text="Sign In" />
