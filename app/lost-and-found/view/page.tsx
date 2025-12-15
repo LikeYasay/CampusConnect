@@ -224,7 +224,7 @@ export default function LostItemViewPage() {
             <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
               <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Posted By</h3>
               <div className="flex items-center gap-4 mb-6">
-                <UserAvatar name={item.user?.name || "Anonymous"} src={item.user?.profileImageUrl} />
+                <UserAvatar name={item.user?.name || "Anonymous"} src={item.user?.profileImageUrl || "/profile.png"} />
                 <div>
                   <div className="flex items-center gap-2">
                     <p className="font-bold text-gray-900 text-lg">{item.user?.name || "Anonymous"}</p>

@@ -1,4 +1,5 @@
 "use client"
+
 import { useState, useEffect, useCallback, useRef, useMemo } from "react"
 import { useSearchParams, useRouter } from 'next/navigation'
 import { forumAPI, discussionAPI } from "@/lib/api"
@@ -11,7 +12,8 @@ import { PostActions } from "./post-actions"
 import { RepliesSection } from "./replies-section"
 import { ReplyForm } from "./reply-form"
 import { TopContributorsSidebar } from "./top-contributors-sidebar"
-import axios from "axios" // ✅ Import axios
+import { ShareModal } from "./share-modal" 
+import axios from "axios" 
 
 interface DiscussionPageProps {
   data?: any 
@@ -20,33 +22,42 @@ interface DiscussionPageProps {
 export default function DiscussionPage({ data }: DiscussionPageProps) {
   const searchParams = useSearchParams()
   
+  
   const id = searchParams.get("id") || data?.id
 
+  
   const [post, setPost] = useState<any | null>(data || null)
   const [replies, setReplies] = useState<any[]>([]) 
   const [loading, setLoading] = useState(!data) 
 
+  
   const [showReplyForm, setShowReplyForm] = useState(false)
   const [replyMessage, setReplyMessage] = useState("")
   const [sendingReply, setSendingReply] = useState(false)
-  
   const [replyingTo, setReplyingTo] = useState<{ id: number; name: string } | null>(null)
 
+  
   const [isPostLiked, setIsPostLiked] = useState(false)
   const [postLikeCount, setPostLikeCount] = useState(0)
   const [likedReplies, setLikedReplies] = useState<Record<number, boolean>>({})
   const [replyLikeCounts, setReplyLikeCounts] = useState<Record<number, number>>({})
+  
+  
   const [currentUser, setCurrentUser] = useState<any>(null)
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false) 
 
   const replyFormRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
 
+  
+
+  
   useEffect(() => {
     const u = getUserFromToken()
     if (u) setCurrentUser(u)
   }, [])
 
-  // ✅ NEW EFFECT: Trigger View Count on Mount
+  
   useEffect(() => {
     if (!id) return;
 
@@ -55,7 +66,7 @@ export default function DiscussionPage({ data }: DiscussionPageProps) {
             const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8080";
             const token = localStorage.getItem("authToken");
             
-            // Calls the PUT endpoint to increment view by 1
+            
             await axios.put(`${baseUrl}/forum/${id}/view`, {}, {
                 headers: { 
                     Authorization: `Bearer ${token}`,
@@ -68,9 +79,9 @@ export default function DiscussionPage({ data }: DiscussionPageProps) {
     };
 
     incrementView();
-  }, [id]); // Only runs when 'id' changes (page load)
+  }, [id]);
 
-  // Fetch Post Data & Replies
+  
   useEffect(() => {
     if (!id) return
     let mounted = true
@@ -81,12 +92,14 @@ export default function DiscussionPage({ data }: DiscussionPageProps) {
       try {
         const promises = []
         
+        
         if (!data) {
             promises.push(forumAPI.getById(Number(id)))
         } else {
             promises.push(Promise.resolve(data))
         }
 
+        
         promises.push(discussionAPI.getByForumId(Number(id)))
 
         const [pRes, rRes] = await Promise.allSettled(promises)
@@ -111,33 +124,21 @@ export default function DiscussionPage({ data }: DiscussionPageProps) {
     return () => { mounted = false }
   }, [id, data]) 
 
-  const rootReplies = useMemo(() => {
-    const replyMap = new Map(replies.map(r => [r.id, { ...r, children: [] }]))
-    const roots: any[] = []
-
-    replies.forEach(r => {
-        if (r.parent && replyMap.has(r.parent.id)) {
-            replyMap.get(r.parent.id).children.push(replyMap.get(r.id))
-        } else {
-            roots.push(replyMap.get(r.id))
-        }
-    })
-    
-    return roots.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-  }, [replies])
-
-
+  
   useEffect(() => {
     const loadLikeStatuses = async () => {
       if (!post?.id && replies.length === 0) return
       if (!currentUser?.userId) return
 
       try {
+        
         if (post?.id) {
           const postStatus = await forumAPI.getLikeStatus(post.id, currentUser.userId)
           setIsPostLiked(postStatus.isLiked)
           setPostLikeCount(postStatus.likeCount)
         }
+        
+        
         for (const reply of replies) {
            try {
              const replyStatus = await discussionAPI.getLikeStatus(reply.id, currentUser.userId)
@@ -150,79 +151,26 @@ export default function DiscussionPage({ data }: DiscussionPageProps) {
     loadLikeStatuses()
   }, [post?.id, replies, currentUser?.userId])
 
-  const handleToggleLikePost = useCallback(async () => {
-    if (!currentUser?.userId) { router.push("/login"); return; }
-    if (!post?.id) return
-    try {
-      const result = await forumAPI.like(post.id, currentUser.userId)
-      setIsPostLiked(result.isLiked)
-      setPostLikeCount(result.likeCount)
-    } catch (err) { console.error(err) }
-  }, [post?.id, currentUser?.userId, router])
+  
 
-  const handleLikeReply = useCallback(async (replyId: number) => {
-    if (!currentUser?.userId) { router.push("/login"); return; }
-    try {
-      const result = await discussionAPI.like(replyId, currentUser.userId)
-      setLikedReplies(prev => ({ ...prev, [replyId]: result.isLiked }))
-      setReplyLikeCounts(prev => ({ ...prev, [replyId]: result.likeCount }))
-    } catch (err) { console.error(err) }
-  }, [currentUser?.userId, router])
+  
+  const rootReplies = useMemo(() => {
+    const replyMap = new Map(replies.map(r => [r.id, { ...r, children: [] }]))
+    const roots: any[] = []
 
-
-  const handleReplyTo = useCallback((replyId: number, username: string) => {
-    setReplyingTo({ id: replyId, name: username })
-    setShowReplyForm(true)
-    setReplyMessage(`@${username} `)
-    
-    setTimeout(() => {
-        replyFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-    }, 100)
-  }, [])
-
-  const handleSendReply = useCallback(async (e?: any) => {
-      if (e?.preventDefault) e.preventDefault()
-      if (!replyMessage.trim()) return
-      const user = getUserFromToken()
-      if (!user?.userId || !post?.id) {
-        if(!user?.userId) router.push("/login")
-        return
-      }
-
-      setSendingReply(true)
-      try {
-        const payload: any = {
-          forum: { id: post.id },
-          user: { userId: user.userId },
-          content: replyMessage.trim(),
-        }
-
-        if (replyingTo) {
-            payload.parent = { id: replyingTo.id }
-        }
-
-        const created = await discussionAPI.create(payload)
-
-        if (created?.id) {
-          setReplies((r) => [created, ...r]) 
+    replies.forEach(r => {
+        if (r.parent && replyMap.has(r.parent.id)) {
+            replyMap.get(r.parent.id).children.push(replyMap.get(r.id))
         } else {
-          const fresh = await discussionAPI.getByForumId(post.id)
-          setReplies(Array.isArray(fresh) ? fresh : [])
+            roots.push(replyMap.get(r.id))
         }
-        
-        setReplyMessage("")
-        setShowReplyForm(false)
-        setReplyingTo(null)
-      } catch (err) {
-        console.error("Reply failed:", err)
-        alert("Failed to send reply")
-      } finally {
-        setSendingReply(false)
-      }
-    },
-    [replyMessage, post, router, replyingTo],
-  )
+    })
+    
+    
+    return roots.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+  }, [replies])
 
+  
   const topContributors = useCallback(() => {
     if (!post && replies.length === 0) return []
     const counts: Record<string, any> = {}
@@ -252,6 +200,85 @@ export default function DiscussionPage({ data }: DiscussionPageProps) {
       .map(([name, data]) => ({ name, count: data.count, profileImageUrl: data.profileImageUrl }))
   }, [post, replies])
 
+  
+
+  const handleToggleLikePost = useCallback(async () => {
+    if (!currentUser?.userId) { router.push("/login"); return; }
+    if (!post?.id) return
+    try {
+      const result = await forumAPI.like(post.id, currentUser.userId)
+      setIsPostLiked(result.isLiked)
+      setPostLikeCount(result.likeCount)
+    } catch (err) { console.error(err) }
+  }, [post?.id, currentUser?.userId, router])
+
+  const handleLikeReply = useCallback(async (replyId: number) => {
+    if (!currentUser?.userId) { router.push("/login"); return; }
+    try {
+      const result = await discussionAPI.like(replyId, currentUser.userId)
+      setLikedReplies(prev => ({ ...prev, [replyId]: result.isLiked }))
+      setReplyLikeCounts(prev => ({ ...prev, [replyId]: result.likeCount }))
+    } catch (err) { console.error(err) }
+  }, [currentUser?.userId, router])
+
+  const handleReplyTo = useCallback((replyId: number, username: string) => {
+    setReplyingTo({ id: replyId, name: username })
+    setShowReplyForm(true)
+    setReplyMessage(`@${username} `)
+    
+    
+    setTimeout(() => {
+        replyFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }, 100)
+  }, [])
+
+  const handleSendReply = useCallback(async (e?: any) => {
+      if (e?.preventDefault) e.preventDefault()
+      if (!replyMessage.trim()) return
+      const user = getUserFromToken()
+      if (!user?.userId || !post?.id) {
+        if(!user?.userId) router.push("/login")
+        return
+      }
+
+      setSendingReply(true)
+      try {
+        const payload: any = {
+          forum: { id: post.id },
+          user: { userId: user.userId },
+          content: replyMessage.trim(),
+        }
+
+        if (replyingTo) {
+            payload.parent = { id: replyingTo.id }
+        }
+
+        const created = await discussionAPI.create(payload)
+
+        
+        if (created?.id) {
+          setReplies((r) => [created, ...r]) 
+        } else {
+          const fresh = await discussionAPI.getByForumId(post.id)
+          setReplies(Array.isArray(fresh) ? fresh : [])
+        }
+        
+        
+        setReplyMessage("")
+        setShowReplyForm(false)
+        setReplyingTo(null)
+      } catch (err) {
+        console.error("Reply failed:", err)
+        alert("Failed to send reply")
+      } finally {
+        setSendingReply(false)
+      }
+    },
+    [replyMessage, post, router, replyingTo],
+  )
+
+  
+
   if (loading && !post) return <div className="min-h-screen flex items-center justify-center bg-gray-50">Loading...</div>
   if (!post && !loading) return <div className="min-h-screen flex items-center justify-center bg-gray-50">Post not found</div>
 
@@ -263,13 +290,21 @@ export default function DiscussionPage({ data }: DiscussionPageProps) {
 
       <main className="max-w-7xl mx-auto w-full flex flex-col lg:flex-row gap-8 mt-6 mb-20 px-6">
         <div className="flex-1 space-y-6">
+            {/* POST CARD */}
             <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-8">
                 <PostHeader post={post} />
                 <PostContent post={post} />
                 <PostMetadata post={post} repliesCount={replies.length} likeCount={postLikeCount} />
-                <PostActions isLiked={isPostLiked} onLike={handleToggleLikePost} />
+                
+                {/* Actions with Share Handler */}
+                <PostActions 
+                    isLiked={isPostLiked} 
+                    onLike={handleToggleLikePost}
+                    onShare={() => setIsShareModalOpen(true)} 
+                />
             </div>
 
+            {/* REPLIES SECTION */}
             <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-8">
                 <div className="flex justify-between items-center mb-8 border-b border-gray-100 pb-4">
                     <h2 className="text-xl font-bold text-gray-900">
@@ -318,9 +353,16 @@ export default function DiscussionPage({ data }: DiscussionPageProps) {
             </div>
         </div>
         
-        {/* Sidebar */}
+        {/* SIDEBAR */}
         <TopContributorsSidebar contributors={contributors} />
       </main>
+
+      {/* ✅ SHARE MODAL */}
+      <ShareModal 
+        isOpen={isShareModalOpen} 
+        onClose={() => setIsShareModalOpen(false)} 
+        url={typeof window !== "undefined" ? window.location.href : ""} 
+      />
     </div>
   )
 }

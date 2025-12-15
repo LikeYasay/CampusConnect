@@ -238,7 +238,7 @@ export default function LostAndFoundPage() {
         {/* --- ITEMS LIST --- */}
         <section id="browse-section" className="max-w-7xl mx-auto mt-6 px-6 space-y-6 pb-20">
           {currentItems.length === 0 ? (
-            <div className="text-center py-20 bg-white rounded-2xl border border-dashed border-gray-300">
+            <div className="text-center py-20 bg-white rounded-2xl">
               <p className="text-gray-400 text-lg">No items match your search.</p>
             </div>
           ) : (
@@ -278,7 +278,7 @@ export default function LostAndFoundPage() {
                   {/* Header */}
                   <div className="flex justify-between items-start mb-4">
                     <div className="flex items-center gap-3">
-                      <UserAvatar name={item.user?.name || "A"} src={item.user?.profileImageUrl} />
+                      <UserAvatar name={item.user?.name || "A"} src={item.user?.profileImageUrl || "/profile.png"} />
                       <div>
                         <p className="text-sm font-bold text-gray-900">{item.user?.name || "Anonymous"}</p>
                         <p className="text-xs text-gray-500">
